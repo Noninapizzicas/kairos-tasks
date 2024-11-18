@@ -1,0 +1,39 @@
+version: '3.8'
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  tasks:
+    build: 
+      context: ./app
+      args:
+        NODE_ENV: production
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - REDIS_HOST=redis.n8nonina.es
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    volumes:
+      - ./app/public:/app/public:ro
+      - ./app/data:/app/data
+      - /etc/localtime:/etc/localtime:ro
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - kairos-net
+    logging: *default-logging
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  kairos-net:
+    driver: bridge
